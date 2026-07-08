@@ -20,7 +20,9 @@ const AddToCart = async (req,res)=>{
 
 let GetCartItems = async (req,res)=>{
     let {userId}= req.body;
-    CartModel.GetCartItems(userId, res);
+    const items = await CartModel.GetCartItems(userId);
+    if (items === null) return res.status(500).json({ message: "Error retrieving cart items" });
+    return res.status(200).json({ message: "Cart Items retrieved successfully", data: items });
 }
 
 let RemoveFromCart = async (req,res)=>{

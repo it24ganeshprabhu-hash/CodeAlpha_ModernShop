@@ -1,14 +1,16 @@
 require("dotenv").config();
 let express = require("express");
 let cors = require("cors");
-let UserRoutes = require("./routes/UserRoutes");
-let InventoryRoutes = require("./routes/InventoryRoutes");
+let userRoutes = require("./routes/UserRoutes");
+let inventoryRoutes = require("./routes/InventoryRoutes");
+let orderRoutes = require("./routes/OrderRoutes");
 const { Client } = require("./models/UserModel");
 let app = express();
 app.use(cors());
 app.use(express.json());
-app.use("/",UserRoutes);
-app.use("/inventory",InventoryRoutes);
+app.use("/",userRoutes);
+app.use("/inventory",inventoryRoutes);
+app.use("/order", orderRoutes);
 
 let PORT = process.env.PORT || 9000;
 process.on('SIGINT', async () => {

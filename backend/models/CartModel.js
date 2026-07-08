@@ -26,15 +26,15 @@ const AddToCart = async (userId, cartItem, res)=>{
     }
 }
 
-const GetCartItems = async (userId, res)=>{
+const GetCartItems = async (userId)=>{
     let db = Client.db("modernshop_db");
     try{
         const cart = await db.collection("carts").findOne({userId: new ObjectId(userId)});
-        res.status(200).json({message:"Cart Items retrieved successfully", data: cart ? cart.items : []});
-
+        return cart ? cart.items : [];
     }
     catch(err){
-        res.status(500).json({message: "Error retrieving cart items", details: err.message});
+        console.error("Error retrieving cart items:", err);
+        return null;
     }
 }
 

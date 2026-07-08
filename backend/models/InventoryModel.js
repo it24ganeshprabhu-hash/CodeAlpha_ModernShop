@@ -40,20 +40,28 @@ let UpdateProduct = async (productId, updatedData, res)=>{
     let db = Client.db("modernshop_db");
     let collection = db.collection("product_data");
     try{
+        const updateQuery = Object.keys(updatedData || {}).some(k => k.startsWith("$"))
+            ? updatedData
+            : { $set: updatedData };
+
         const result = await collection.updateOne(
             { _id: new ObjectId(productId) },
-            { $set: updatedData }
+            updateQuery
         );
 
         if (result.matchedCount === 0) {
-            return res.status(404).json({ message: "Product not found" });
+            if (res) return res.status(404).json({ message: "Product not found" });
+            return false;
         }
 
-        res.status(200).json({ message: "Product updated successfully" });
+        if (res) res.status(200).json({ message: "Product updated successfully" });
+        return true;
 
     }
     catch(err){
-        res.status(500).json({message:"Error in updating product", details:err.message});
+        console.error("Error in UpdateProduct:", err);
+        if (res) res.status(500).json({message:"Error in updating product", details:err.message});
+        return false;
     }
 }
 const GetProductById = async (productId) => {
