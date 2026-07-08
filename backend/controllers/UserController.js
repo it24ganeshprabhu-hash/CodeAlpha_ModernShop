@@ -18,21 +18,6 @@ let LoginUser = (req,res)=>{
     UserModel.LoginUser(req,res);
 }
 
-let ShoppingCart = (req,res)=>{
-    let cartItem = {
-        userId: req.body.userId,
-        productId: req.body.productId,
-        name: req.body.name,
-        price: req.body.price,
-        quantity: req.body.quantity || 1 
-        
-    }
-    UserModel.AddToCart(cartItem,res);
-}
 
-let RemoveFromCart = (req,res)=>{
-    const {userId, productId} = req.body;
-    UserModel.RemoveFromCart(userId, productId, res);
-}
 
-module.exports = {RegisterUser,LoginUser,ShoppingCart,RemoveFromCart};
+module.exports = {RegisterUser,LoginUser};

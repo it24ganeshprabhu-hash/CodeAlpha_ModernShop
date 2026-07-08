@@ -56,5 +56,14 @@ let UpdateProduct = async (productId, updatedData, res)=>{
         res.status(500).json({message:"Error in updating product", details:err.message});
     }
 }
+const GetProductById = async (productId) => {
+    try {
+        const db = Client.db("modernshop_db");
+        return await db.collection("product_data").findOne({ _id: new ObjectId(productId) });
+    } catch (err) {
+        console.error("Error in GetProductById:", err);
+        return null;
+    }
+};
 
-module.exports = {AddProduct,GetAllProducts,UpdateProduct};
+module.exports = {AddProduct,GetAllProducts,UpdateProduct,GetProductById};
