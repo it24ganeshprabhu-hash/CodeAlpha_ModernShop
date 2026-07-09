@@ -1,5 +1,7 @@
 let {MongoClient , ObjectId, ClientEncryption} = require("mongodb");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = "your_super_secret_key";
 let url = process.env.MONGO_URI;
 
 let Client = new MongoClient(url);
@@ -44,7 +46,8 @@ let LoginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(req.body.password, user.password);
 
         if (isMatch) {
-            res.status(200).json({ message: "User Logged In Successfully"});
+            const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
+            res.status(200).json({ message: "Login successful", token: token });
         } else {
             res.status(401).json({ message: "Invalid Username or Password" });
         }
