@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Modern Shop</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9f9f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        
+        .login-container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        
+        h2 { color: #333; margin-bottom: 25px; }
+        
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 5px; color: #666; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        .btn-login { width: 100%; padding: 12px; background: #ff9900; border: none; border-radius: 8px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; }
+        .btn-login:hover { background: #e68a00; }
+        
+        .forgot-btn { background: none; border: none; color: #666; font-size: 0.85rem; cursor: pointer; margin-top: 10px; text-decoration: underline; }
+        
+        .footer-link { margin-top: 20px; font-size: 0.9rem; color: #666; }
+        .footer-link a { color: #ff9900; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Login to Modern Shop</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn-login">Login</button>
+            <br>
+            <button type="button" class="forgot-btn" onclick="alert('Redirecting to reset password...')">Forgot Password?</button>
+        </form>
+        <p class="footer-link">Don't have an account? <a href="register.html">Register here</a></p>
+    </div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        const response = await fetch('http://localhost:3000/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('authToken', data.token);
+
+            alert("Login successful!");
+            window.location.href = 'index.html';
+        } else {
+            const errorData = await response.json().catch(() => ({ message: 'Unexpected error' }));
+            alert("Login failed: " + (errorData.message || "Unknown error"));
+        }
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        alert("Could not connect to the server.");
+    }
+});
+</script>
+</body>
+</html>
