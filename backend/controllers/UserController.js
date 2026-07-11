@@ -18,6 +18,25 @@ let LoginUser = (req,res)=>{
     UserModel.LoginUser(req,res);
 }
 
+let GetProfile = (req,res)=>{
+    UserModel.GetProfile(req,res);
+    
+}
 
+let UpdateProfile = (req,res)=>{
+   const userId = req.user.id; 
+    const updateData = {
+        email: req.body.email,
+        phone: req.body.phone,
+        address: req.body.address,
+        password: req.body.password 
+    };
+    UserModel.UpdateProfile(userId, updateData, res);
 
-module.exports = {RegisterUser,LoginUser};
+}
+
+let GetOrder = (req,res)=>{
+    UserModel.GetOrders(req,res);
+
+}
+module.exports = {RegisterUser,LoginUser,GetProfile,UpdateProfile,GetOrder};

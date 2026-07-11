@@ -72,9 +72,10 @@
     const API_BASE_URL = 'http://localhost:3000';
 
     function saveAuthToken(token) {
-        if (!token) return;
-        localStorage.setItem('authToken', token);
-        sessionStorage.setItem('authToken', token);
+    if (!token) return;
+    localStorage.clear(); 
+    sessionStorage.clear();
+    localStorage.setItem('authToken', token);
     }
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {

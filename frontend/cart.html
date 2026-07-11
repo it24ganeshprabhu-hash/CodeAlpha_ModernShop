@@ -24,6 +24,19 @@
         .qty-btn:hover { background: #f0f0f0; }
         
         h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+
+        .checkout-btn { 
+            background: #ff9900; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 1.1rem; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 20px;
+        }
+        .checkout-btn:hover { background: #e68a00; }
     </style>
 </head>
 <body>
@@ -32,6 +45,11 @@
         <a href="shop.html" class="back-btn">← Back to Shop</a>
         <h2>Your Shopping Cart</h2>
         <div id="cartItems">Loading your cart...</div>
+        
+        <!-- Checkout Section -->
+        <div id="checkoutSection" style="text-align: right; display: none;">
+            <button class="checkout-btn" onclick="processOrder()">Proceed to Checkout</button>
+        </div>
     </div>
 
     <script>
@@ -55,12 +73,14 @@
                 const result = await response.json();
 
                 const container = document.getElementById('cartItems');
+                const checkoutSection = document.getElementById('checkoutSection');
                 container.innerHTML = '';
 
                 const items = Array.isArray(result.data) ? result.data : [];
 
                 if (items.length === 0) {
                     container.innerHTML = '<p>Your cart is empty.</p>';
+                    checkoutSection.style.display = 'none';
                     return;
                 }
 
@@ -71,7 +91,7 @@
                             <div class="item-info">
                                 <h3>${item.name}</h3>
                                 <p class="item-description">${item.description || 'No description available.'}</p>
-                                <p><strong>Price: $${Number(item.price || 0).toFixed(2)}</strong></p>
+                                <p><strong>Price: ₹${Number(item.price || 0).toFixed(2)}</strong></p>
                                 <div class="quantity-controls">
                                     <button class="qty-btn" onclick="updateQty('${item.productId}', -1)">-</button>
                                     <span>${item.quantity}</span>
@@ -81,6 +101,7 @@
                         </div>
                     `;
                 });
+                checkoutSection.style.display = 'block';
             } catch (err) {
                 document.getElementById('cartItems').innerHTML = '<p>Your cart is empty.</p>';
             }
@@ -102,11 +123,14 @@
                     alert(result.message || 'Unable to update cart.');
                     return;
                 }
-
                 await loadCart();
             } catch (err) {
                 alert('Unable to update cart.');
             }
+        }
+
+        async function processOrder() {
+            alert('Processing your order...');
         }
 
         loadCart();

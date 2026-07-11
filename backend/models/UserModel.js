@@ -7,10 +7,11 @@ let url = process.env.MONGO_URI;
 let Client = new MongoClient(url);
 
 let RegisterUser = async (customer, res) => {
-    let db = Client.db("modernshop_db");
-    let collection = db.collection("customer_data");
-
     try {
+        await Client.connect();
+        let db = Client.db("modernshop_db");
+        let collection = db.collection("customer_data");
+
         const existingUser = await collection.findOne({ 
             $or: [{ username: customer.username }, { email: customer.email }] 
         });
@@ -33,10 +34,11 @@ let RegisterUser = async (customer, res) => {
 }
 
 let LoginUser = async (req, res) => {
-    let db = Client.db("modernshop_db");
-    let collection = db.collection("customer_data");
-
     try {
+        await Client.connect();
+        let db = Client.db("modernshop_db");
+        let collection = db.collection("customer_data");
+
         const user = await collection.findOne({ username: req.body.username });
 
         if (!user) {
@@ -56,6 +58,53 @@ let LoginUser = async (req, res) => {
     }
 }
 
+const GetProfile = async (req,res)=>{
+    try{
+        await Client.connect();
+        const db = Client.db("modernshop_db");
+        const user = await db.collection("customer_data").findOne(
+            {_id: new ObjectId(req.user.id)},
+            {projection: {password: 0}}
+        )
+        res.json(user);
+    }
+    catch(err){
+        res.status(500).json({message: "Error in getting information." , details: err.message});
+    }
+}
 
-module.exports = {RegisterUser,LoginUser,Client};
+const UpdateProfile = async (userId, updateData, res) => {
+    try {
+        await Client.connect();
+        const db = Client.db("modernshop_db");
+        let setClause = { 
+            email: updateData.email, 
+            phone: updateData.phone, 
+            address: updateData.address 
+        };
+        if (updateData.password && updateData.password.trim() !== "") {
+            setClause.password = await bcrypt.hash(updateData.password, 10);
+        }
+        await db.collection("customer_data").updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: setClause }
+        );
+        res.json({ message: "Profile updated successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Update failed", details: err.message });
+    }
+};
+
+const GetOrders = async (req, res) => {
+    try {
+        await Client.connect();
+        const db = Client.db("modernshop_db");
+        const orders = await db.collection("orders").find({ userId: new ObjectId(req.user.id) }).toArray();
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching orders" });
+    }
+};
+
+module.exports = {RegisterUser,LoginUser,GetOrders,UpdateProfile,GetProfile,Client};
 
