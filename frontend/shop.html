@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop | Modern Shop</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: #f4f4f4; }
+        
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 40px; background: #333; color: white; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-weight: 500; }
+        .btn-profile { background: #ff9900; padding: 8px 16px; border-radius: 5px; color: white; text-decoration: none; }
+
+        .controls { padding: 20px 40px; display: flex; gap: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .controls input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        .controls select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: white; }
+
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; padding: 40px; }
+        .product-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-5px); }
+        
+        .product-card img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        .product-card h3 { color: #333; font-size: 1.1rem; margin: 10px 0 5px; }
+        .product-card p { color: #ff9900; font-weight: 700; margin-bottom: 15px; }
+        
+        .btn-add { background: #333; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; }
+        .btn-add:hover { background: #000; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">Modern Shop</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="shop.html">Shop</a>
+            <a href="profile.html" class="btn-profile">Profile</a>
+        </div>
+    </nav>
+
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search products..." onkeyup="filterProducts()">
+        <select id="categoryFilter" onchange="filterProducts()">
+            <option value="All">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Home">Home</option>
+        </select>
+    </div>
+
+    <div id="productContainer" class="product-grid"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+        let allProducts = [];
+
+        function getAuthToken() {
+            return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+        }
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/inventory/all`);
+                const result = await response.json();
+                allProducts = Array.isArray(result) ? result : (result.data || []);
+                renderProducts(allProducts);
+            } catch (err) {
+                document.getElementById('productContainer').innerHTML = '<p>Unable to load items.</p>';
+            }
+        }
+
+        function renderProducts(products) {
+            const container = document.getElementById('productContainer');
+            container.innerHTML = '';
+            products.forEach(p => {
+                container.innerHTML += `
+                    <div class="product-card">
+                        <img src="${p.imageUrl || 'https://via.placeholder.com/200'}" alt="${p.name}">
+                        <h3>${p.name}</h3>
+                        <p>₹${Number(p.price || 0).toFixed(2)}</p>
+                        <button class="btn-add" onclick="addToCart('${p._id}')">Add to Cart</button>
+                    </div>
+                `;
+            });
+        }
+
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            
+            const filtered = allProducts.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(searchTerm);
+                const matchesCategory = (category === 'All' || p.category === category);
+                return matchesSearch && matchesCategory;
+            });
+            renderProducts(filtered);
+        }
+        async function addToCart(productId) {
+            const token = getAuthToken();
+            if (!token) return alert('Please login first!');
+
+            const response = await fetch(`${API_BASE_URL}/cart/add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ productId: productId, quantity: 1 })
+            });
+
+            const result = await response.json().catch(() => ({ message: 'Unable to add item to cart.' }));
+            if (!response.ok) {
+                alert(result.message || 'Please login again.');
+                return;
+            }
+            alert(result.message || 'Item added to cart.');
+            window.location.href = 'cart.html';
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>

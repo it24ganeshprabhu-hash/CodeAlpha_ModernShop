@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart | Modern Shop</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .cart-container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Back Button */
+        .back-btn { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #333; font-weight: bold; padding: 8px 16px; border: 1px solid #ccc; border-radius: 6px; }
+        .back-btn:hover { background: #eee; }
+
+        .cart-item { display: flex; align-items: flex-start; border-bottom: 1px solid #eee; padding: 25px 0; gap: 20px; }
+        .item-info { flex: 1; }
+        .item-info h3 { margin: 0 0 8px 0; }
+        .item-description { color: #666; font-size: 0.9em; margin-bottom: 10px; line-height: 1.4; }
+        
+        .item-image { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; }
+        
+        .quantity-controls { margin-top: 15px; display: flex; align-items: center; gap: 10px; }
+        .qty-btn { padding: 6px 14px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-weight: bold; }
+        .qty-btn:hover { background: #f0f0f0; }
+        
+        h2 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="cart-container" id="cartContainer">
+        <a href="shop.html" class="back-btn">← Back to Shop</a>
+        <h2>Your Shopping Cart</h2>
+        <div id="cartItems">Loading your cart...</div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000';
+
+        function getAuthToken() {
+            return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+        }
+
+        const token = getAuthToken();
+        if (!token) {
+            alert('Please login to view your cart.');
+            window.location.href = 'login.html';
+        }
+
+        async function loadCart() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart/items`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                const container = document.getElementById('cartItems');
+                container.innerHTML = '';
+
+                const items = Array.isArray(result.data) ? result.data : [];
+
+                if (items.length === 0) {
+                    container.innerHTML = '<p>Your cart is empty.</p>';
+                    return;
+                }
+
+                items.forEach((item) => {
+                    container.innerHTML += `
+                        <div class="cart-item">
+                            <img src="${item.imageUrl || 'https://via.placeholder.com/120'}" class="item-image" alt="${item.name}">
+                            <div class="item-info">
+                                <h3>${item.name}</h3>
+                                <p class="item-description">${item.description || 'No description available.'}</p>
+                                <p><strong>Price: $${Number(item.price || 0).toFixed(2)}</strong></p>
+                                <div class="quantity-controls">
+                                    <button class="qty-btn" onclick="updateQty('${item.productId}', -1)">-</button>
+                                    <span>${item.quantity}</span>
+                                    <button class="qty-btn" onclick="updateQty('${item.productId}', 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                document.getElementById('cartItems').innerHTML = '<p>Your cart is empty.</p>';
+            }
+        }
+
+        async function updateQty(productId, change) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart/update`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ productId, quantityDelta: change })
+                });
+
+                const result = await response.json().catch(() => ({ message: 'Unable to update cart.' }));
+                if (!response.ok) {
+                    alert(result.message || 'Unable to update cart.');
+                    return;
+                }
+
+                await loadCart();
+            } catch (err) {
+                alert('Unable to update cart.');
+            }
+        }
+
+        loadCart();
+    </script>
+</body>
+</html>
