@@ -99,10 +99,11 @@ const GetOrders = async (req, res) => {
     try {
         await Client.connect();
         const db = Client.db("modernshop_db");
-        const orders = await db.collection("orders").find({ userId: new ObjectId(req.user.id) }).toArray();
+        const userId = req.user.id;
+        const orders = await db.collection("orders_data").find({ userId: userId }).toArray();
         res.json(orders);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching orders" });
+        res.status(500).json({ message: "Error fetching orders", details: err.message });
     }
 };
 

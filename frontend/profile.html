@@ -5,14 +5,41 @@
     <title>My Profile | Modern Shop</title>
     <style>
     :root {--primary: #ff9900; --bg: #f8f9fa; --card: #ffffff; --text: #333;}
-    body {font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text);margin: 0; padding: 40px 20px;}
-    .profile-container {max-width: 1000px; margin: auto;display: grid; grid-template-columns: 1fr 1fr; gap: 30px;}
+
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif; 
+        background-color: var(--bg); 
+        color: var(--text); 
+        margin: 0; 
+        padding: 20px;
+        min-height: 100vh;
+    }
+
+    .profile-container {
+        width: 100%;
+        max-width: 1200px; 
+        margin: auto; 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 20px;
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 768px) {
+        .profile-container { 
+            grid-template-columns: 1fr; 
+        }
+    }
+
+    .nav-container {
+        grid-column: 1 / -1; 
+    }
 
     .card {
         background: var(--card);
         padding: 30px;
         border-radius: 16px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
 
     h2 {
@@ -24,38 +51,24 @@
         padding-left: 15px;
     }
 
-    .form-group {
-        margin-bottom: 20px;
-    }
+    .form-group { margin-bottom: 20px; }
 
     label {
         display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.8rem;
+        font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 8px;
-        color: #777;
+        color: #666;
     }
 
     input {
         width: 100%;
-        padding: 12px;
+        padding: 14px;
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 1rem;
-        transition: border 0.3s, box-shadow 0.3s;
         box-sizing: border-box;
-    }
-
-    input:focus {
-        border-color: var(--primary);
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(255, 153, 0, 0.1);
-    }
-
-    input:disabled {
-        background: #f0f0f0;
-        cursor: not-allowed;
     }
 
     .btn {
@@ -65,24 +78,12 @@
         border-radius: 8px;
         cursor: pointer;
         font-weight: 700;
-        transition: transform 0.2s, background 0.3s;
+        margin-top: 10px;
     }
 
-    .btn:hover {
-        transform: translateY(-1px);
-    }
-
-    .btn-update {
-        background: var(--primary);
-        color: white;
-        margin-bottom: 10px;
-    }
-
-    .btn-logout {
-        background: #fffafa;
-        color: #d9534f;
-        border: 1px solid #ffdcdc;
-    }
+    .btn-back { background: #eee; color: #555; width: auto; padding: 10px 25px; }
+    .btn-update { background: var(--primary); color: white; }
+    .btn-logout { background: #fffafa; color: #d9534f; border: 1px solid #ffdcdc; }
 
     .bill-item {
         background: #f9f9f9;
@@ -92,22 +93,14 @@
         border-left: 3px solid #ddd;
         display: flex;
         justify-content: space-between;
-        transition: border-left-color 0.3s;
-    }
-
-    .bill-item:hover {
-        border-left-color: var(--primary);
-    }
-
-    @media (max-width: 768px) {
-        .profile-container {
-            grid-template-columns: 1fr;
-        }
     }
     </style>
 </head>
 <body>
 <div class="profile-container">
+    <div class="nav-container">
+        <button class="btn btn-back" onclick="window.location.href='shop.html'">← Back to Shop</button>
+    </div>
     <div class="card">
         <h2>Account Settings</h2>
         <div class="form-group"><label>Username</label><input type="text" id="username" disabled></div>
@@ -132,7 +125,6 @@
 
     async function loadProfile() {
         try {
-            // Fetch User Profile
             const res = await fetch(`${API_BASE_URL}/profile`, { 
                 headers: { 'Authorization': `Bearer ${token}` } 
             });
@@ -142,22 +134,44 @@
             document.getElementById('email').value = data.email;
             document.getElementById('phone').value = data.phone;
             document.getElementById('address').value = data.address;
-
-            // Fetch Order History
             const orderRes = await fetch(`${API_BASE_URL}/orders`, { 
                 headers: { 'Authorization': `Bearer ${token}` } 
             });
             const orders = await orderRes.json();
+            const sortedOrders = Array.isArray(orders) ? [...orders].reverse() : [];
             
             const billList = document.getElementById('billList');
+            billList.style.maxHeight = '500px';
+            billList.style.overflowY = 'auto';
+            billList.style.paddingRight = '5px';
             
-            if (Array.isArray(orders) && orders.length > 0) {
-                billList.innerHTML = orders.map(order => `
-                    <div class="bill-item">
-                        <span>Order #${order._id.slice(-6)}</span>
-                        <strong>$${order.total || '0.00'}</strong>
-                    </div>
-                `).join('');
+            if (sortedOrders.length > 0) {
+                billList.innerHTML = sortedOrders.map(order => {
+                    const date = new Date(order.createdAt).toLocaleDateString();
+                    const time = new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    const productsList = order.items.map(item => `
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <img src="${item.imageUrl || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                            <div>
+                                <div style="font-weight: 600;">${item.name}</div>
+                                <div style="font-size: 0.8rem; color: #666;">Qty: ${item.quantity}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    return `
+                        <div class="bill-item" style="flex-direction: column; align-items: flex-start;">
+                            <div style="width: 100%; margin-bottom: 10px; font-size: 0.85rem; color: #888;">
+                                ${date} • ${time}
+                            </div>
+                            <div style="width: 100%;">${productsList}</div>
+                            <div style="margin-top: 10px; width: 100%; text-align: right; border-top: 1px solid #eee; padding-top: 10px;">
+                                <strong>Total: ₹${order.total || '0.00'}</strong>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } else {
                 billList.innerHTML = '<p>No orders found yet.</p>';
             }

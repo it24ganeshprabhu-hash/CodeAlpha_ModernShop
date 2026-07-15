@@ -45,95 +45,111 @@
         <a href="shop.html" class="back-btn">← Back to Shop</a>
         <h2>Your Shopping Cart</h2>
         <div id="cartItems">Loading your cart...</div>
-        
-        <!-- Checkout Section -->
         <div id="checkoutSection" style="text-align: right; display: none;">
             <button class="checkout-btn" onclick="processOrder()">Proceed to Checkout</button>
         </div>
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:3000';
+    const API_BASE_URL = 'http://localhost:3000';
+    let currentCartTotal = 0; 
 
-        function getAuthToken() {
-            return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
-        }
+    function getAuthToken() {
+        return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+    }
 
-        const token = getAuthToken();
-        if (!token) {
-            alert('Please login to view your cart.');
-            window.location.href = 'login.html';
-        }
+    const token = getAuthToken();
+    if (!token) {
+        alert('Please login to view your cart.');
+        window.location.href = 'login.html';
+    }
 
-        async function loadCart() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/cart/items`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await response.json();
+    async function loadCart() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/cart/items`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
 
-                const container = document.getElementById('cartItems');
-                const checkoutSection = document.getElementById('checkoutSection');
-                container.innerHTML = '';
+            const container = document.getElementById('cartItems');
+            const checkoutSection = document.getElementById('checkoutSection');
+            container.innerHTML = '';
+            
+            const items = Array.isArray(result.data) ? result.data : [];
+            currentCartTotal = 0; 
+            if (items.length === 0) {
+                container.innerHTML = '<p>Your cart is empty.</p>';
+                checkoutSection.style.display = 'none';
+                return;
+            }
 
-                const items = Array.isArray(result.data) ? result.data : [];
-
-                if (items.length === 0) {
-                    container.innerHTML = '<p>Your cart is empty.</p>';
-                    checkoutSection.style.display = 'none';
-                    return;
-                }
-
-                items.forEach((item) => {
-                    container.innerHTML += `
-                        <div class="cart-item">
-                            <img src="${item.imageUrl || 'https://via.placeholder.com/120'}" class="item-image" alt="${item.name}">
-                            <div class="item-info">
-                                <h3>${item.name}</h3>
-                                <p class="item-description">${item.description || 'No description available.'}</p>
-                                <p><strong>Price: ₹${Number(item.price || 0).toFixed(2)}</strong></p>
-                                <div class="quantity-controls">
-                                    <button class="qty-btn" onclick="updateQty('${item.productId}', -1)">-</button>
-                                    <span>${item.quantity}</span>
-                                    <button class="qty-btn" onclick="updateQty('${item.productId}', 1)">+</button>
-                                </div>
+            items.forEach((item) => {
+                const itemPrice = Number(item.price || 0);
+                currentCartTotal += (itemPrice * item.quantity);
+                
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <img src="${item.imageUrl || 'https://via.placeholder.com/120'}" class="item-image" alt="${item.name}">
+                        <div class="item-info">
+                            <h3>${item.name}</h3>
+                            <p class="item-description">${item.description || 'No description.'}</p>
+                            <p><strong>Price: ₹${itemPrice.toFixed(2)}</strong></p>
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="updateQty('${item.productId}', -1)">-</button>
+                                <span>${item.quantity}</span>
+                                <button class="qty-btn" onclick="updateQty('${item.productId}', 1)">+</button>
                             </div>
                         </div>
-                    `;
-                });
-                checkoutSection.style.display = 'block';
-            } catch (err) {
-                document.getElementById('cartItems').innerHTML = '<p>Your cart is empty.</p>';
-            }
-        }
+                    </div>
+                `;
+            });
 
-        async function updateQty(productId, change) {
+            container.innerHTML += `
+                <div style="text-align: right; font-size: 1.3rem; margin-top: 20px;">
+                    <strong>Total: ₹${currentCartTotal.toFixed(2)}</strong>
+                </div>
+            `;
+            
+            checkoutSection.style.display = 'block';
+        } catch (err) {
+            document.getElementById('cartItems').innerHTML = '<p>Error loading cart.</p>';
+        }
+    }
+
+    async function updateQty(productId, change) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/cart/update`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ productId, quantityDelta: change })
+            });
+            if (!response.ok) throw new Error();
+            await loadCart();
+        } catch (err) { alert('Unable to update cart.'); }
+    }
+
+    async function processOrder() {
+        if (confirm('Proceed to finalize your order for ₹' + currentCartTotal.toFixed(2) + '?')) {
             try {
-                const response = await fetch(`${API_BASE_URL}/cart/update`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ productId, quantityDelta: change })
+                const response = await fetch(`${API_BASE_URL}/order/place`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
-
-                const result = await response.json().catch(() => ({ message: 'Unable to update cart.' }));
-                if (!response.ok) {
-                    alert(result.message || 'Unable to update cart.');
-                    return;
+                
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Order placed successfully!');
+                    window.location.href = 'profile.html'; 
+                } else {
+                    alert(result.message || 'Checkout failed.');
                 }
-                await loadCart();
             } catch (err) {
-                alert('Unable to update cart.');
+                alert('Could not connect to server.');
             }
         }
+    }
 
-        async function processOrder() {
-            alert('Processing your order...');
-        }
-
-        loadCart();
-    </script>
+    loadCart();
+</script>
 </body>
 </html>
